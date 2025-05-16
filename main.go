@@ -7,6 +7,19 @@ import (
 	"github.com/tobib-dev/gator/internal/config"
 )
 
+type state struct {
+	cfg *config.Config
+}
+
+type command struct {
+	name    string
+	handler []string
+}
+
+type commands struct {
+	handlers map[string]func(*state, command) error
+}
+
 func main() {
 	cfg, err := config.Read()
 	if err != nil {
