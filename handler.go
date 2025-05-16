@@ -3,15 +3,16 @@ package main
 import "fmt"
 
 func handlerLogin(s *state, cmd command) error {
-	if len(cmd.handler) == 0 || len(cmd.handler) > 1 {
+	if len(cmd.args) == 0 {
 		return fmt.Errorf("Please enter a valid username, username can only be one argument!")
 	}
 
-	err := s.cfg.SetUser(cmd.handler[0])
+	userName := cmd.args[0]
+	err := s.cfg.SetUser(userName)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Username " + cmd.handler[0] + " has been set.")
+	fmt.Println("Username " + cmd.args[0] + " has been set.")
 
 	return nil
 }

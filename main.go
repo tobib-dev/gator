@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/tobib-dev/gator/internal/config"
 )
@@ -12,8 +13,8 @@ type state struct {
 }
 
 type command struct {
-	name    string
-	handler []string
+	name string
+	args []string
 }
 
 type commands struct {
@@ -25,16 +26,25 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Printf("Read config: %+v\n", cfg)
+	gatorState := state{}
+	gatorState.cfg = &cfg
 
-	err = cfg.SetUser("tobi")
-	if err != nil {
-		log.Fatalf("couldn't set current user: %v", err)
+	gatorCmd := commands{}
+	gatorCmd.handlers = make(map[string]func(*state, command) error)
+	gatorCmd.register("login", handlerLogin)
+
+	if len(os.Args) < 2 {
+		fmt.Println("Not enough arguments were provided")
+		os.Exit(1)
+	}
+	userCmd := command{
+		name: os.Args[1],
+		args: os.Args[2:],
 	}
 
-	cfg, err = config.Read()
+	err = gatorCmd.run(&gatorState, userCmd)
 	if err != nil {
-		log.Fatalf("error reading config: %v", err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	fmt.Printf("Read config again: %+v\n", cfg)
 }
