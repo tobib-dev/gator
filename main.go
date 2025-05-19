@@ -22,6 +22,10 @@ func main() {
 	}
 
 	db, err := sql.Open("postgres", cfg.DBUrl)
+	if err != nil {
+		log.Fatalf("error connecting to database: %v", err)
+	}
+	defer db.Close()
 	dbQueries := database.New(db)
 
 	gatorState := &state{
