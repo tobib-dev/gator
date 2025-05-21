@@ -29,7 +29,6 @@ func handlerLogin(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <name>", cmd.Name)
 	}
-
 	name := cmd.Args[0]
 
 	_, err := s.db.GetUser(context.Background(), name)
@@ -60,7 +59,6 @@ func handlerRegister(s *state, cmd command) error {
 
 	user, err := s.db.CreateUser(context.Background(), userParams)
 	if err != nil {
-		fmt.Println(err)
 		return fmt.Errorf("Error creating user: %w", err)
 	}
 

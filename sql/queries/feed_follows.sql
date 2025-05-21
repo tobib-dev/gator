@@ -23,7 +23,7 @@ ON inserted_feed_follow.feed_id = feeds.id;
 
 -- name: GetFeedFollowsForUser :many
 SELECT
-    feed_follows.id,
+    feed_follows.*,
     users.name AS user_name,
     feeds.name AS feed_name
 FROM feed_follows
