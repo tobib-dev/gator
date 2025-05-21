@@ -9,11 +9,7 @@ import (
 	"github.com/tobib-dev/gator/internal/database"
 )
 
-func handlerAddFeed(s *state, cmd command) error {
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("usage: %s <name><url>", cmd.Name)
@@ -25,7 +21,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		UpdatedAt: time.Now().UTC(),
 		Name:      cmd.Args[0],
 		Url:       cmd.Args[1],
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("couldn't create feed: %w", err)
@@ -35,7 +31,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 		FeedID:    feed.ID,
 	})
 	if err != nil {
@@ -43,7 +39,7 @@ func handlerAddFeed(s *state, cmd command) error {
 	}
 
 	fmt.Println("Feed created successfully:")
-	printFeed(feed, currentUser)
+	printFeed(feed, user)
 	fmt.Println()
 	fmt.Println("Feed followed successfully:")
 	printFeedFollow(feedFollow.UserName, feedFollow.FeedName)
