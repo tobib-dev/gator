@@ -71,6 +71,28 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
+func scrapeFeeds(s *state) error {
+	feed, err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return fmt.Errorf("couldn't retrieve feed: %w", err)
+	}
+
+	err = s.db.MarkFeedFetched(context.Background(), feed.ID)
+	if err != nil {
+		return fmt.Errorf("couldn't mark feed: %w", err)
+	}
+
+	fFeed, err := fetchFeed(context.Background(), feed.Url)
+	if err != nil {
+		return fmt.Errorf("couldn't retrieve feed by url: %w", err)
+	}
+
+	for _, item := range fFeed.Channel.Item {
+		fmt.Printf("* Title: %s\n", item.Title)
+	}
+	return nil
+}
+
 func printFeed(feed database.Feed, user database.User) {
 	fmt.Printf("* ID:          %s\n", feed.ID)
 	fmt.Printf("* Created:     %v\n", feed.CreatedAt)
