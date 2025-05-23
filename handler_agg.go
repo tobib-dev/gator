@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tobib-dev/gator/internal/database"
 )
 
@@ -45,12 +46,31 @@ func scrapeFeed(db *database.Queries, feed database.Feed) {
 
 	feedData, err := fetchFeed(context.Background(), feed.Url)
 	if err != nil {
-		log.Printf("couldn't retrieve feed %s: %w", feed.Name, err)
+		log.Printf("couldn't retrieve feed %s: %v", feed.Name, err)
 		return
 	}
 
 	for _, item := range feedData.Channel.Item {
-		fmt.Printf("Found post: %s\n", item.Title)
+		pubTime, err := time.Parse("2025-05-22 11:21:35", item.PubDate)
+		if err != nil {
+			fmt.Printf("Error parsing time to time type: %w\n", err)
+			log.Printf("couldn't parse time: %v", err)
+		}
+
+		_, err = db.CreatePosts(context.Background(), database.CreatePostsParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: item.Description,
+			PublishedAt: pubTime,
+			FeedID:      feed.ID,
+		})
+		if err != nil {
+			fmt.Println(err)
+			log.Printf("error creating post: %v", err)
+		}
 	}
 	log.Printf("Feed %s collected, %v post found", feed.Name, len(feedData.Channel.Item))
 }

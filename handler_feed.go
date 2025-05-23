@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -78,4 +80,32 @@ func printFeed(feed database.Feed, user database.User) {
 	fmt.Printf("* Name:        %s\n", feed.Name)
 	fmt.Printf("* URL:         %s\n", feed.Url)
 	fmt.Printf("* User:        %s\n", user.Name)
+}
+
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	var postLimit int32
+	if len(cmd.Args) == 1 {
+		limInt, err := strconv.ParseInt(cmd.Args[0], 10, 32)
+		if err != nil {
+			return fmt.Errorf("couldn't convert string to int: %w", err)
+		}
+		postLimit = int32(limInt)
+	} else {
+		postLimit = 2
+	}
+
+	posts, err := s.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  postLimit,
+	})
+	if err != nil {
+		fmt.Println("couldn't get posts")
+		fmt.Println(err)
+		log.Printf("couldn't fetch users posts: %v", err)
+	}
+
+	for _, post := range posts {
+		fmt.Println(post.Title)
+	}
+	return nil
 }
