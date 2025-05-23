@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/tobib-dev/gator/internal/database"
 )
 
@@ -51,25 +52,40 @@ func scrapeFeed(db *database.Queries, feed database.Feed) {
 	}
 
 	for _, item := range feedData.Channel.Item {
-		pubTime, err := time.Parse("2025-05-22 11:21:35", item.PubDate)
-		if err != nil {
-			fmt.Printf("Error parsing time to time type: %w\n", err)
-			log.Printf("couldn't parse time: %v", err)
+		timeFormats := []string{"Mon Jan 2 15:04:05 MST 2006", "Mon, 02 Jan 2006 15:04:05 -0700", "2006-01-02T15:04:05Z"}
+
+		var pubTime time.Time
+		success := false
+		for _, format := range timeFormats {
+			pubTime, err = time.Parse(format, item.PubDate)
+			if err == nil {
+				success = true
+				break
+			}
 		}
 
-		_, err = db.CreatePosts(context.Background(), database.CreatePostsParams{
-			ID:          uuid.New(),
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-			Title:       item.Title,
-			Url:         item.Link,
-			Description: item.Description,
-			PublishedAt: pubTime,
-			FeedID:      feed.ID,
-		})
-		if err != nil {
-			fmt.Println(err)
-			log.Printf("error creating post: %v", err)
+		if !success {
+			log.Printf("wrong date format: %v", item.PubDate)
+		} else {
+			_, err = db.CreatePosts(context.Background(), database.CreatePostsParams{
+				ID:          uuid.New(),
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+				Title:       item.Title,
+				Url:         item.Link,
+				Description: item.Description,
+				PublishedAt: pubTime,
+				FeedID:      feed.ID,
+			})
+			if err != nil {
+				if pqErr, ok := err.(*pq.Error); ok {
+					if pqErr.Code == "23505" && pqErr.Constraint == "posts_url_key" {
+						continue
+					}
+				}
+				fmt.Println(err)
+				log.Printf("error creating post: %v", err)
+			}
 		}
 	}
 	log.Printf("Feed %s collected, %v post found", feed.Name, len(feedData.Channel.Item))
